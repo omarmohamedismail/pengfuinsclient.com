@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Coaching | Penguins</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:     '#000000',
+        card:   '#0D0D0D',
+        card2:  '#131313',
+        border: '#1E1E1E',
+        accent: '#6C5CE7',
+        gold:   '#F5B942',
+        text:   '#F5F5F5',
+        muted:  '#8A8A8E'
+      },
+      fontFamily: {
+        display: ['Space Grotesk','sans-serif'],
+        sans: ['Inter','sans-serif'],
+        mono: ['JetBrains Mono','monospace']
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { background:#000000; font-family:'Inter',sans-serif; }
+  .display { font-family:'Space Grotesk',sans-serif; }
+  .card { background:#0D0D0D; border:1px solid #1E1E1E; }
+  .glow { box-shadow:0 0 0 1px rgba(108,92,231,0.25), 0 8px 28px -12px rgba(108,92,231,0.35); }
+  .input-dark { background:#000000; border:1px solid #1E1E1E; color:#F5F5F5; }
+  .input-dark:focus { border-color:#6C5CE7; outline:none; box-shadow:0 0 0 2px rgba(108,92,231,0.2); }
+  .page { display:none; }
+  .page.active { display:block; animation:rise .3s ease; }
+  @keyframes rise { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .nav-link.active { background:#0D0D0D; color:#fff !important; box-shadow: inset 2px 0 0 #6C5CE7; }
+  .scrollbar-hide::-webkit-scrollbar { display:none; }
+  .thin-scroll::-webkit-scrollbar { width:6px; }
+  .thin-scroll::-webkit-scrollbar-thumb { background:#1E1E1E; border-radius:4px; }
+  .thin-scroll { -webkit-overflow-scrolling:touch; }
+  .vault-container { position:relative; width:100%; aspect-ratio:16/9; background:#0D0D0D; border-radius:10px; overflow:hidden; border:1px solid #1E1E1E; }
+  .vault-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .vault-after { clip-path:inset(0 0 0 50%); }
+  .vault-slider { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; z-index:10; }
+  .vault-line { position:absolute; top:0; bottom:0; width:2px; background:#6C5CE7; left:50%; transform:translateX(-50%); pointer-events:none; box-shadow:0 0 10px rgba(108,92,231,0.6); }
+  .vault-handle { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:28px; height:28px; background:#6C5CE7; border-radius:50%; pointer-events:none; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; box-shadow:0 0 12px rgba(108,92,231,0.7); }
+  .loading-veil { position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center; z-index:50; transition:opacity .3s ease; }
+  .chat-bubble-me { background:#6C5CE7; color:#fff; border-radius:14px 14px 3px 14px; }
+  .chat-bubble-them { background:#131313; border:1px solid #1E1E1E; color:#F5F5F5; border-radius:14px 14px 14px 3px; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:60; display:flex; align-items:flex-start; justify-content:center; padding:6vh 16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .toast-wrap { position:fixed; bottom:20px; right:20px; z-index:80; display:flex; flex-direction:column; gap:8px; }
+  .toast { background:#131313; border:1px solid #2A2A2A; border-left:3px solid #6C5CE7; color:#F5F5F5; padding:12px 16px; border-radius:10px; font-size:13px; box-shadow:0 10px 30px -10px rgba(0,0,0,0.6); animation:toastIn .25s ease; max-width:300px; }
+  @keyframes toastIn { from{opacity:0; transform:translateX(20px);} to{opacity:1; transform:translateX(0);} }
+  .notif-dot { position:absolute; top:-2px; right:-2px; width:9px; height:9px; background:#F5B942; border-radius:50%; border:2px solid #000; }
+  .notif-panel { position:absolute; top:48px; right:0; width:320px; max-width:calc(100vw - 32px); max-height:400px; overflow-y:auto; z-index:35; }
+  .checklist-item { display:flex; align-items:center; gap:10px; padding:8px 0; }
+  .checklist-check { width:20px; height:20px; border-radius:6px; border:1.5px solid #2A2A2A; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
+  .checklist-check.done { background:#6C5CE7; border-color:#6C5CE7; color:#fff; }
+  #sidebar { transition: transform .25s ease; }
+  @media (max-width: 767px) {
+    #sidebar { position:fixed; inset-y:0; left:0; z-index:50; transform:translateX(-100%); width:78vw; max-width:300px; }
+    #sidebar.open { transform:translateX(0); }
+  }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+  @media (max-width: 640px) {
+    .cal-grid-wrap { overflow-x:auto; }
+    .cal-grid { grid-template-columns:repeat(7, minmax(96px,1fr)); min-width:720px; }
+  }
+  .cal-day { background:#0D0D0D; border:1px solid #1E1E1E; border-radius:10px; min-height:90px; padding:6px; }
+  .cal-day.today { border-color:#6C5CE7; }
+  .exercise-row { background:#131313; border:1px solid #1E1E1E; border-radius:10px; padding:12px 14px; }
+  .habit-check { width:26px; height:26px; border-radius:8px; border:1.5px solid #2A2A2A; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; flex-shrink:0; }
+  .habit-check.done { background:#6C5CE7; border-color:#6C5CE7; }
+  .flame { filter: grayscale(1) opacity(0.35); }
+  .flame.lit { filter: none; }
+  .readiness-dial { position:relative; width:150px; height:150px; margin:0 auto; }
+  .slot-chip { background:#131313; border:1px solid #1E1E1E; border-radius:10px; padding:10px 14px; cursor:pointer; transition:.15s; }
+  .slot-chip:hover { border-color:#6C5CE7; }
+  .slot-chip.selected { border-color:#6C5CE7; background:rgba(108,92,231,0.1); }
+  .sig-box { border:1px dashed #2A2A2A; border-radius:10px; padding:16px; text-align:center; }
+</style>
+</head>
+<body class="text-text antialiased">
+
+<div id="loadingVeil" class="loading-veil">
+  <div class="text-center">
+    <div class="display text-3xl text-white mb-2">Penguins 🐧<span class="text-accent">.</span></div>
+    <div class="text-muted text-xs tracking-widest uppercase">Loading your portal…</div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app" class="flex h-screen overflow-hidden">
+
+  <div id="sidebarBackdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black/60 z-40 md:hidden"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="w-64 bg-card border-r border-border flex-col flex shrink-0">
+    <div class="p-6 border-b border-border flex items-center justify-between">
+      <div>
+        <h1 class="display text-2xl font-bold text-white">Penguins 🐧<span class="text-accent">.</span></h1>
+        <p class="text-[11px] text-muted mt-1 tracking-wide uppercase" data-i18n="sidebar.tagline">My Coaching</p>
+      </div>
+      <button onclick="closeSidebar()" class="md:hidden w-8 h-8 flex items-center justify-center text-muted hover:text-white text-lg">×</button>
+    </div>
+    <div class="px-6 pt-4 space-y-2">
+      <button onclick="openPalette()" class="w-full flex items-center justify-between px-3 py-2 bg-black border border-border rounded-lg text-muted text-xs hover:border-accent/50 transition">
+        <span class="flex items-center"><span class="mr-2">⌕</span><span data-i18n="sidebar.search">Quick search</span></span>
+        <kbd>⌘K</kbd>
+      </button>
+      <button onclick="openHelp()" class="w-full flex items-center justify-between px-3 py-2 bg-black border border-border rounded-lg text-muted text-xs hover:border-accent/50 transition">
+        <span class="flex items-center"><span class="mr-2">?</span><span data-i18n="sidebar.help">Help & Guide</span></span>
+      </button>
+    </div>
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide min-h-0">
+      <p class="text-[10px] text-muted uppercase tracking-widest px-4 mb-2 mt-1" data-i18n="sidebar.overview">Overview</p>
+      <a href="#" data-page="dashboard" class="nav-link active flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">◆</span><span data-i18n="nav.dashboard">Dashboard</span></a>
+      <a href="#" data-page="plan" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▤</span><span data-i18n="nav.plan">My Plan</span></a>
+      <a href="#" data-page="workoutlog" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▥</span><span data-i18n="nav.workoutlog">Workout Log</span></a>
+      <a href="#" data-page="nutrition" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">◍</span><span data-i18n="nav.nutrition">Nutrition</span></a>
+      <a href="#" data-page="goals" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">⬢</span><span data-i18n="nav.goals">Goals & Badges</span></a>
+
+      <p class="text-[10px] text-muted uppercase tracking-widest px-4 mb-2 mt-4" data-i18n="sidebar.coaching">Coaching</p>
+      <a href="#" data-page="messages" class="nav-link flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="flex items-center"><span class="mr-3">✉</span><span data-i18n="nav.messages">Messages</span></span><span id="unread-badge" class="hidden bg-accent text-white text-[10px] rounded-full px-1.5 py-0.5"></span></a>
+      <a href="#" data-page="formcheck" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▶</span><span data-i18n="nav.formcheck">Form Check</span></a>
+      <a href="#" data-page="vault" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▣</span><span data-i18n="nav.vault">Progress</span></a>
+      <a href="#" data-page="booking" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">●</span><span data-i18n="nav.booking">Book a Session</span></a>
+      <a href="#" data-page="library" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▦</span><span data-i18n="nav.library">Resource Library</span></a>
+
+      <p class="text-[10px] text-muted uppercase tracking-widest px-4 mb-2 mt-4" data-i18n="sidebar.community">Community</p>
+      <a href="#" data-page="community" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">◐</span><span data-i18n="nav.community">Community</span></a>
+      <a href="#" data-page="referrals" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">↗</span><span data-i18n="nav.referrals">Referrals</span></a>
+
+      <p class="text-[10px] text-muted uppercase tracking-widest px-4 mb-2 mt-4" data-i18n="sidebar.business">Business</p>
+      <a href="#" data-page="billing" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">$</span><span data-i18n="nav.billing">Billing</span></a>
+      <a href="#" data-page="shop" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">▨</span><span data-i18n="nav.shop">Shop</span></a>
+      <a href="#" data-page="contracts" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">✎</span><span data-i18n="nav.contracts">Contracts</span></a>
+      <a href="#" data-page="account" class="nav-link flex items-center px-4 py-2.5 text-sm font-medium text-muted rounded-lg transition-all"><span class="mr-3">◉</span><span data-i18n="nav.account">Account</span></a>
+    </nav>
+    <div class="p-4 border-t border-border">
+      <a href="#" onclick="goToAccount(event)" class="flex items-center w-full text-left hover:bg-card2 rounded-lg p-2 transition">
+        <div id="sidebar-avatar" class="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-white font-bold text-sm">AM</div>
+        <div class="ml-3 flex-1"><p id="sidebar-name" class="text-sm font-medium text-white">Alex M.</p><p class="text-xs text-muted" data-i18n="sidebar.viewAccount">View account</p></div>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex items-center gap-3 px-4 md:px-8 py-3 border-b border-border bg-card shrink-0">
+      <button onclick="openSidebar()" class="md:hidden w-9 h-9 flex items-center justify-center text-white text-xl leading-none">☰</button>
+      <h1 class="md:hidden display text-lg font-bold text-white">Penguins 🐧<span class="text-accent">.</span></h1>
+      <div class="flex-1"></div>
+      <div class="relative" id="langSwitchWrap">
+        <button onclick="toggleLangPanel()" class="flex items-center gap-1.5 h-10 px-3 rounded-full bg-black border border-border text-white text-xs font-medium hover:border-accent/50 transition">
+          <span id="lang-current-flag">🇬🇧</span><span id="lang-current-label">EN</span>
+        </button>
+        <div id="lang-panel" class="hidden absolute top-12 right-0 w-44 card rounded-xl p-1.5 z-40">
+          <button onclick="setLang('en')" class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text rounded-lg hover:bg-card2 transition"><span>🇬🇧</span>English</button>
+          <button onclick="setLang('de')" class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text rounded-lg hover:bg-card2 transition"><span>🇩🇪</span>Deutsch</button>
+          <button onclick="setLang('ar')" class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text rounded-lg hover:bg-card2 transition"><span>🇸🇦</span>العربية</button>
+        </div>
+      </div>
+      <div class="relative" id="notifBellWrap">
+        <button onclick="toggleNotifPanel()" class="relative w-10 h-10 rounded-full bg-black border border-border flex items-center justify-center text-white hover:border-accent/50 transition">
+          🔔
+          <span id="notif-dot" class="notif-dot hidden"></span>
+        </button>
+        <div id="notif-panel" class="notif-panel card rounded-2xl p-3 thin-scroll hidden">
+          <p class="text-xs text-muted uppercase tracking-wide px-2 py-1" data-i18n="misc.notifications">Notifications</p>
+          <div id="notif-list" class="space-y-1"></div>
+        </div>
+      </div>
+    </div>
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="page-dashboard" class="page active">
+      <header class="mb-8">
+        <h2 class="display text-3xl font-bold text-white"><span data-i18n="dash.greeting">Hey,</span> <span id="dash-name">Alex</span> 👋</h2>
+        <p class="text-muted mt-1" data-i18n="dash.subtitle">Here's where things stand today.</p>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Readiness dial -->
+        <div class="card rounded-2xl p-6 text-center">
+          <h3 class="display text-sm font-semibold text-white tracking-wide uppercase mb-4" data-i18n="card.todaySReadiness">Today's Readiness</h3>
+          <div class="readiness-dial">
+            <svg width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="62" fill="none" stroke="#1E1E1E" stroke-width="12"/>
+              <circle id="readiness-ring" cx="75" cy="75" r="62" fill="none" stroke="#6C5CE7" stroke-width="12" stroke-linecap="round" stroke-dasharray="390" stroke-dashoffset="390" transform="rotate(-90 75 75)"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="readiness-emoji" class="text-3xl">—</span>
+              <span id="readiness-label" class="text-xs text-muted mt-1">Not checked in</span>
+            </div>
+          </div>
+          <button onclick="openCheckin()" id="checkin-btn" class="mt-5 w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow">Check In</button>
+        </div>
+
+        <!-- Streak -->
+        <div class="card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="display text-sm font-semibold text-white tracking-wide uppercase mb-3" data-i18n="card.streak">Streak</h3>
+            <div class="flex items-end gap-3">
+              <span id="streak-flame" class="text-5xl flame">🔥</span>
+              <div><p id="streak-count" class="display text-4xl font-bold text-white leading-none">0</p><p class="text-muted text-xs mt-1">days in a row</p></div>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-border flex justify-between text-sm">
+            <span class="text-muted">Points</span><span id="streak-points" class="text-accent font-bold">0</span>
+          </div>
+        </div>
+
+        <!-- Today's plan snapshot -->
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-sm font-semibold text-white tracking-wide uppercase mb-3" data-i18n="card.todaySFocus">Today's Focus</h3>
+          <div id="dash-plan-snapshot"></div>
+          <button onclick="navigateTo('plan')" class="mt-4 text-accent text-xs font-medium hover:underline">View full plan →</button>
+        </div>
+      </div>
+
+      <div id="dash-checklist" class="card rounded-2xl p-5 mb-6"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="display text-lg font-semibold text-white" data-i18n="card.weightTrend">Weight Trend</h3>
+            <span class="text-xs text-muted">Last 90 days</span>
+          </div>
+          <div class="h-64"><canvas id="weightChart"></canvas></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.dailyHabits">Daily Habits</h3>
+          <div id="dash-habits" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY PLAN ===== -->
+    <div id="page-plan" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.plan">My Plan</h2><p class="text-muted mt-1" data-i18n="sub.plan">Your current program from your coach.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <div id="current-plan-detail"></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.planHistory">Plan History</h3>
+          <div id="plan-history" class="space-y-3 max-h-[520px] overflow-y-auto thin-scroll pr-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WORKOUT LOG ===== -->
+    <div id="page-workoutlog" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.workoutlog">Workout Log</h2><p class="text-muted mt-1" data-i18n="sub.workoutlog">Check off today's session and see your training history.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="display text-lg font-semibold text-white" data-i18n="card.todaySSession">Today's Session</h3>
+            <span id="workout-progress-label" class="text-xs text-muted">0 / 0 sets logged</span>
+          </div>
+          <div id="workout-checklist" class="space-y-2 mb-5"></div>
+          <button onclick="finishWorkout()" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow">Mark Workout Complete</button>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.thisMonth">This Month</h3>
+          <div class="cal-grid-wrap"><div class="cal-grid" id="workout-calendar"></div></div>
+          <div class="mt-5 pt-4 border-t border-border">
+            <h4 class="text-white text-sm font-semibold mb-3">Recent Sessions</h4>
+            <div id="workout-history" class="space-y-2 max-h-[220px] overflow-y-auto thin-scroll pr-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== NUTRITION ===== -->
+    <div id="page-nutrition" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.nutrition">Nutrition</h2><p class="text-muted mt-1" data-i18n="sub.nutrition">Log meals and track today's macros against your targets.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.todaySMacros">Today's Macros</h3>
+          <div class="h-48 mb-4"><canvas id="macroChart"></canvas></div>
+          <div class="space-y-2 text-xs" id="macro-summary"></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.logAMeal">Log a Meal</h3>
+          <form id="form-meal" class="space-y-3">
+            <input type="text" name="name" required placeholder="What did you eat?" data-i18n-placeholder="ph.whatDidYouEat" class="w-full input-dark rounded-lg px-4 py-2 text-sm">
+            <div class="grid grid-cols-3 gap-2">
+              <input type="number" name="protein" placeholder="Protein g" data-i18n-placeholder="ph.proteinG" class="w-full input-dark rounded-lg px-3 py-2 text-xs">
+              <input type="number" name="carbs" placeholder="Carbs g" data-i18n-placeholder="ph.carbsG" class="w-full input-dark rounded-lg px-3 py-2 text-xs">
+              <input type="number" name="fats" placeholder="Fats g" data-i18n-placeholder="ph.fatsG" class="w-full input-dark rounded-lg px-3 py-2 text-xs">
+            </div>
+            <input type="number" name="calories" placeholder="Calories (optional)" data-i18n-placeholder="ph.caloriesOptional" class="w-full input-dark rounded-lg px-4 py-2 text-sm">
+            <button type="submit" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.logMeal">Log Meal</button>
+          </form>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.todaySLog">Today's Log</h3>
+          <div id="meal-log" class="space-y-2 max-h-[320px] overflow-y-auto thin-scroll pr-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GOALS & BADGES ===== -->
+    <div id="page-goals" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.goals">Goals & Badges</h2><p class="text-muted mt-1" data-i18n="sub.goals">What you're working toward, and what you've already earned.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="display text-lg font-semibold text-white" data-i18n="card.activeGoals">Active Goals</h3>
+            <button onclick="openAddGoal()" class="text-accent text-xs font-medium hover:underline">+ Add Goal</button>
+          </div>
+          <div id="list-goals" class="space-y-4"></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.badgesEarned">Badges Earned</h3>
+          <div id="list-badges" class="grid grid-cols-2 gap-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MESSAGES ===== -->
+    <div id="page-messages" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.messages">Messages</h2><p class="text-muted mt-1" data-i18n="sub.messages">Chat directly with your coach.</p></header>
+      <div class="card rounded-2xl overflow-hidden flex flex-col" style="height:70vh;">
+        <div class="p-4 border-b border-border flex items-center">
+          <div class="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center text-accent text-xs font-bold mr-3">JD</div>
+          <div><p class="text-white text-sm font-semibold">Jordan Diaz</p><p class="text-muted text-xs">Your coach</p></div>
+        </div>
+        <div class="flex-1 overflow-y-auto thin-scroll p-4 space-y-3 min-h-0" id="chat-thread"></div>
+        <form id="form-chat" class="p-3 border-t border-border flex gap-2">
+          <input type="text" id="chat-input" placeholder="Write a message…" data-i18n-placeholder="ph.writeAMessage" class="flex-1 input-dark rounded-lg px-4 py-2 text-sm">
+          <button type="submit" class="px-5 py-2 bg-accent text-white text-sm font-semibold rounded-lg hover:bg-indigo-500 transition" data-i18n="btn.send">Send</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ===== FORM CHECK ===== -->
+    <div id="page-formcheck" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.formcheck">Form Check</h2><p class="text-muted mt-1" data-i18n="sub.formcheck">Submit a video of your lift and get annotated feedback from your coach.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.submitAVideo">Submit a Video</h3>
+          <form id="form-submission" class="space-y-4">
+            <div>
+              <label class="text-xs text-muted mb-1 block">Video File</label>
+              <input type="file" name="file" accept="video/*" required class="w-full input-dark rounded-lg px-3 py-2 text-xs file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-accent file:text-white file:text-xs">
+            </div>
+            <input type="text" name="exercise" required placeholder="Exercise (e.g. Barbell Squat)" data-i18n-placeholder="ph.exerciseEGBarbellSquat" class="w-full input-dark rounded-lg px-4 py-2 text-sm">
+            <textarea name="notes" rows="3" placeholder="Anything you want your coach to look at?" data-i18n-placeholder="ph.anythingYouWantYourCoachToLookAt" class="w-full input-dark rounded-lg px-4 py-2 text-sm"></textarea>
+            <button type="submit" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.submitForReview">Submit for Review</button>
+            <p class="text-muted text-[11px]">Demo uploader — the file name is saved, but real video hosting needs a backend.</p>
+          </form>
+        </div>
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.mySubmissions">My Submissions</h3>
+          <div id="list-submissions" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PROGRESS VAULT ===== -->
+    <div id="page-vault" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.vault">Progress</h2><p class="text-muted mt-1" data-i18n="sub.vault">Your transformation, tracked over time.</p></header>
+      <div class="card rounded-2xl p-6 mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="display text-lg font-semibold text-white" data-i18n="card.day1VsDay90">Day 1 vs Day 90</h3>
+          <span class="text-xs text-muted">Drag to compare</span>
+        </div>
+        <div class="vault-container">
+          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80" class="vault-img" alt="Before">
+          <img src="https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=800&q=80" class="vault-img vault-after" id="vaultAfter" alt="After">
+          <div class="vault-line" id="vaultLine"></div>
+          <div class="vault-handle" id="vaultHandle">⟺</div>
+          <input type="range" min="0" max="100" value="50" class="vault-slider" id="vaultSlider">
+        </div>
+        <div class="flex justify-center gap-4 mt-4">
+          <span class="px-4 py-2 bg-black border border-border rounded-lg text-sm text-muted">Day 1</span>
+          <span class="px-4 py-2 bg-accent/15 border border-accent/40 rounded-lg text-sm text-accent font-bold">Day 90</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.logTodaySMetrics">Log Today's Metrics</h3>
+          <form id="form-metrics" class="space-y-3">
+            <input type="number" step="0.1" name="weight" required placeholder="Weight (lbs)" data-i18n-placeholder="ph.weightLbs" class="w-full input-dark rounded-lg px-4 py-2 text-sm">
+            <input type="number" step="0.1" name="waist" placeholder="Waist (in, optional)" data-i18n-placeholder="ph.waistInOptional" class="w-full input-dark rounded-lg px-4 py-2 text-sm">
+            <button type="submit" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.logEntry">Log Entry</button>
+          </form>
+        </div>
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.weightHistory">Weight History</h3>
+          <div class="h-56"><canvas id="metricsChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BOOK A SESSION ===== -->
+    <div id="page-booking" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.booking">Book a Session</h2><p class="text-muted mt-1" data-i18n="sub.booking">Grab an open slot, or see what's already on your calendar.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.openSlots">Open Slots</h3>
+          <div id="list-open-slots" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.mySessions">My Sessions</h3>
+          <div id="list-my-sessions" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RESOURCE LIBRARY ===== -->
+    <div id="page-library" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.library">Resource Library</h2><p class="text-muted mt-1" data-i18n="sub.library">Guides and programs from your coach.</p></header>
+      <div id="list-library" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- ===== COMMUNITY ===== -->
+    <div id="page-community" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.community">Community</h2><p class="text-muted mt-1" data-i18n="sub.community">Connect with your coach and other clients.</p></header>
+      <div class="card rounded-2xl p-6 mb-6">
+        <form id="form-community" class="flex gap-3">
+          <input type="text" name="post" required placeholder="Share something with the community..." data-i18n-placeholder="ph.shareSomethingWithTheCommunity" class="flex-1 input-dark rounded-lg px-4 py-3 text-sm">
+          <button type="submit" class="px-6 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.post">Post</button>
+        </form>
+      </div>
+      <div id="list-community" class="space-y-4"></div>
+    </div>
+
+    <!-- ===== REFERRALS ===== -->
+    <div id="page-referrals" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.referrals">Referrals</h2><p class="text-muted mt-1" data-i18n="sub.referrals">Share your link — you and your friend both earn rewards.</p></header>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="card rounded-2xl p-6 text-center"><p class="text-muted text-sm">Friends Referred</p><h3 class="display text-4xl font-bold text-white mt-2" id="ref-count">0</h3></div>
+        <div class="card rounded-2xl p-6 text-center"><p class="text-muted text-sm">Rewards Earned</p><h3 class="display text-4xl font-bold text-accent mt-2" id="ref-rewards">0</h3></div>
+        <div class="card rounded-2xl p-6 text-center"><p class="text-muted text-sm">Next Reward At</p><h3 class="display text-4xl font-bold text-gold mt-2" id="ref-next">3</h3></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.yourReferralLink">Your Referral Link</h3>
+        <div class="flex gap-3">
+          <input type="text" id="ref-link" value="penguins.app/join/alex-m" readonly class="flex-1 input-dark rounded-lg px-4 py-3 text-sm font-mono">
+          <button onclick="copyRef()" class="px-6 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow">Copy</button>
+        </div>
+        <p class="text-muted text-xs mt-3">Every friend who signs up with your link earns you both a free week of coaching.</p>
+      </div>
+    </div>
+
+    <!-- ===== SHOP ===== -->
+    <div id="page-shop" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.shop">Shop</h2><p class="text-muted mt-1" data-i18n="sub.shop">Merch and digital products from your coach.</p></header>
+      <div id="list-shop" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- ===== BILLING ===== -->
+    <div id="page-billing" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.billing">Billing</h2><p class="text-muted mt-1" data-i18n="sub.billing">Your invoices from your coach — what's paid and what's due.</p></header>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <div class="card rounded-2xl p-6 text-center"><p class="text-muted text-sm">Total Due</p><h3 class="display text-3xl font-bold text-gold mt-2" id="bill-due">$0</h3></div>
+        <div class="card rounded-2xl p-6 text-center"><p class="text-muted text-sm">Paid This Year</p><h3 class="display text-3xl font-bold text-green-400 mt-2" id="bill-paid">$0</h3></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.invoices">Invoices</h3>
+        <div id="list-billing" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ===== CONTRACTS ===== -->
+    <div id="page-contracts" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.contracts">Contracts</h2><p class="text-muted mt-1" data-i18n="sub.contracts">Agreements and waivers sent by your coach.</p></header>
+      <div class="card rounded-2xl p-6"><div id="list-contracts" class="space-y-3"></div></div>
+    </div>
+
+    <!-- ===== ACCOUNT ===== -->
+    <div id="page-account" class="page">
+      <header class="mb-6"><h2 class="display text-3xl font-bold text-white" data-i18n="header.account">Account</h2><p class="text-muted mt-1" data-i18n="sub.account">Your profile and preferences.</p></header>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card rounded-2xl p-6 text-center">
+          <div id="account-avatar" class="w-24 h-24 rounded-full bg-accent flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4">AM</div>
+          <h3 id="account-name-display" class="text-white font-semibold text-lg">Alex M.</h3>
+          <p class="text-muted text-sm">Coached by Jordan Diaz</p>
+          <div class="mt-4 pt-4 border-t border-border text-left space-y-2">
+            <div class="flex justify-between text-sm"><span class="text-muted">Plan</span><span class="text-white font-medium">Fitness / Strength</span></div>
+            <div class="flex justify-between text-sm"><span class="text-muted">Member since</span><span class="text-white font-medium">Jan 2025</span></div>
+          </div>
+        </div>
+        <div class="lg:col-span-2 card rounded-2xl p-6">
+          <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.profileSettings">Profile Settings</h3>
+          <form id="form-account" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label class="text-xs text-muted mb-1 block">Full Name</label><input type="text" name="name" class="w-full input-dark rounded-lg px-4 py-2 text-sm"></div>
+              <div><label class="text-xs text-muted mb-1 block">Email</label><input type="email" name="email" class="w-full input-dark rounded-lg px-4 py-2 text-sm"></div>
+            </div>
+            <div><label class="text-xs text-muted mb-1 block">Goals & Notes for Your Coach</label><textarea name="bio" rows="4" class="w-full input-dark rounded-lg px-4 py-2 text-sm" placeholder="What are you working toward?" data-i18n-placeholder="ph.whatAreYouWorkingToward"></textarea></div>
+            <button type="submit" class="px-6 py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.saveChanges">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  </div>
+</div>
+
+<!-- ================= CHECK-IN MODAL ================= -->
+<div id="checkinModal" class="modal-overlay hidden" onclick="if(event.target===this)closeCheckin()">
+  <div class="card rounded-2xl w-full max-w-md mx-4 p-6">
+    <h3 class="display text-lg font-semibold text-white mb-1" data-i18n="card.dailyCheckIn">Daily Check-In</h3>
+    <p class="text-muted text-xs mb-5" data-i18n="checkin.desc">Takes 10 seconds. Helps your coach adjust today's session.</p>
+    <form id="form-checkin" class="space-y-5">
+      <div>
+        <div class="flex justify-between text-xs text-muted mb-1"><span data-i18n="checkin.sleep">Sleep quality</span><span id="checkin-sleep-val">7</span></div>
+        <input type="range" min="1" max="10" value="7" name="sleep" id="checkin-sleep" class="w-full accent-accent">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs text-muted mb-1"><span data-i18n="checkin.soreness">Soreness</span><span id="checkin-sore-val">3</span></div>
+        <input type="range" min="1" max="10" value="3" name="sore" id="checkin-sore" class="w-full accent-accent">
+      </div>
+      <div>
+        <div class="flex justify-between text-xs text-muted mb-1"><span data-i18n="checkin.stress">Stress</span><span id="checkin-stress-val">3</span></div>
+        <input type="range" min="1" max="10" value="3" name="stress" id="checkin-stress" class="w-full accent-accent">
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="closeCheckin()" class="flex-1 py-2.5 bg-black border border-border text-muted font-medium rounded-lg hover:text-white transition" data-i18n="btn.cancel">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.submitCheckIn">Submit Check-In</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= WELCOME ================= -->
+<div id="welcomeModal" class="modal-overlay hidden">
+  <div class="card rounded-2xl w-full max-w-lg mx-4 p-7">
+    <h2 class="display text-2xl font-bold text-white mb-1" data-i18n="welcome.title">Welcome to your portal 🐧</h2>
+    <p class="text-muted text-sm mb-5" data-i18n="welcome.subtitle">A quick look before you dive in.</p>
+    <div class="space-y-3 mb-6">
+      <div class="flex items-start gap-3"><span class="text-accent">◆</span><p class="text-sm text-text" data-i18n="welcome.item1"><b class="text-white">Dashboard</b> — check in daily so your coach can adjust your plan to how you're feeling.</p></div>
+      <div class="flex items-start gap-3"><span class="text-accent">▤</span><p class="text-sm text-text" data-i18n="welcome.item2"><b class="text-white">My Plan</b> — your current program, straight from your coach.</p></div>
+      <div class="flex items-start gap-3"><span class="text-accent">▣</span><p class="text-sm text-text" data-i18n="welcome.item3"><b class="text-white">Progress</b> — log your weight and see your before/after photos.</p></div>
+      <div class="flex items-start gap-3"><span class="text-accent">●</span><p class="text-sm text-text" data-i18n="welcome.item4"><b class="text-white">Book a Session</b> — claim an open slot on your coach's calendar any time.</p></div>
+    </div>
+    <button onclick="closeWelcome()" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="welcome.cta">Let's go →</button>
+  </div>
+</div>
+
+<!-- ================= HELP & GUIDE ================= -->
+<div id="helpOverlay" class="modal-overlay hidden" onclick="if(event.target===this)closeHelp()">
+  <div class="card rounded-2xl w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto thin-scroll p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="display text-xl font-bold text-white" data-i18n="card.helpGuide">Help & Guide</h3>
+      <button onclick="closeHelp()" class="text-muted hover:text-white text-xl leading-none">×</button>
+    </div>
+    <div id="help-content" class="space-y-4"></div>
+  </div>
+</div>
+
+<!-- ================= COMMAND PALETTE ================= -->
+<div id="paletteOverlay" class="modal-overlay hidden" onclick="if(event.target===this)closePalette()">
+  <div class="card rounded-2xl w-full max-w-lg overflow-hidden">
+    <input id="paletteInput" type="text" placeholder="Search pages, actions…" data-i18n-placeholder="ph.searchPagesActions" class="w-full bg-card px-5 py-4 text-white text-sm outline-none border-b border-border sticky top-0" oninput="filterPalette()">
+    <div id="paletteResults" class="py-2"></div>
+  </div>
+</div>
+
+<!-- ================= ADD GOAL MODAL ================= -->
+<div id="goalModal" class="modal-overlay hidden" onclick="if(event.target===this)closeAddGoal()">
+  <div class="card rounded-2xl w-full max-w-md mx-4 p-6">
+    <h3 class="display text-lg font-semibold text-white mb-4" data-i18n="card.newGoal">New Goal</h3>
+    <form id="form-goal" class="space-y-4">
+      <input type="text" name="title" required class="w-full input-dark rounded-lg px-4 py-2 text-sm" placeholder="Goal, e.g. Bench 185 lbs" data-i18n-placeholder="goal.titlePh">
+      <div class="grid grid-cols-2 gap-3">
+        <input type="number" step="0.1" name="current" required class="w-full input-dark rounded-lg px-4 py-2 text-sm" placeholder="Current value" data-i18n-placeholder="goal.currentPh">
+        <input type="number" step="0.1" name="target" required class="w-full input-dark rounded-lg px-4 py-2 text-sm" placeholder="Target value" data-i18n-placeholder="goal.targetPh">
+      </div>
+      <input type="text" name="unit" class="w-full input-dark rounded-lg px-4 py-2 text-sm" placeholder="Unit (e.g. lbs, days, reps)" data-i18n-placeholder="goal.unitPh">
+      <div class="flex gap-2">
+        <button type="button" onclick="closeAddGoal()" class="flex-1 py-2.5 bg-black border border-border text-muted font-medium rounded-lg hover:text-white transition" data-i18n="btn.cancel">Cancel</button>
+        <button type="submit" class="flex-1 py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-indigo-500 transition glow" data-i18n="btn.addGoal">Add Goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toastWrap" class="toast-wrap"></div>
+
+<script>
+// ==========================================
+// STORAGE
+// ==========================================
+const DATA_KEY = 'penguins_client_portal_data';
+let db = null;
+
+function defaultData() {
+  return {
+    seenWelcome: false,
+    client: { name: 'Alex M.', email: '', bio: '', coach: 'Jordan Diaz', joined: 'Jan 2025' },
+    points: { points: 340, streak: 12, completion: 92 },
+    readiness: { checkedInToday: false, sleep: 7, sore: 3, stress: 3, status: null },
+    habits: [
+      { id: 1, text: 'Drink 3L of water', done: true },
+      { id: 2, text: 'Hit protein target', done: true },
+      { id: 3, text: 'Log today\'s workout', done: false },
+      { id: 4, text: '8,000 steps', done: false }
+    ],
+    plan: { title: 'Week 3 - Hypertrophy Push', type: 'Training', details: 'Bench Press 4x8\nOHP 3x10\nLateral Raises 3x15\nTricep Dips 3x12', sent: '2 days ago' },
+    planHistory: [
+      { title: 'Week 2 - Hypertrophy Push', type: 'Training', details: 'Bench Press 4x6\nOHP 3x8\nLateral Raises 3x12', sent: '9 days ago' },
+      { title: 'Nutrition Baseline', type: 'Nutrition', details: 'Calories: 2,400\nProtein: 180g\nCarbs: 220g\nFats: 70g', sent: '3 weeks ago' }
+    ],
+    metrics: [ {date:'Jun 1', weight:182, waist:34}, {date:'Jun 15', weight:179, waist:33.5}, {date:'Jul 1', weight:176.5, waist:33}, {date:'Jul 15', weight:174, waist:32.5} ],
+    chat: [
+      { from: 'them', text: 'Hey! Quick question about today\'s session.', time: '9:12 AM' },
+      { from: 'me', text: 'Of course, what\'s up?', time: '9:14 AM' },
+      { from: 'them', text: 'Should I go heavier on squats this week?', time: '9:15 AM' }
+    ],
+    community: [
+      { id: 1, user: 'Coach', type: 'Challenge', text: '🏆 Weekend Challenge: 10,000 steps Saturday AND Sunday. Post screenshots!', likes: 24, likedByMe: false, date: '3h ago' },
+      { id: 2, user: 'Sarah K.', type: 'General Post', text: 'Just hit a new PR on bench! 135 lbs for 5! 🎉', likes: 18, likedByMe: true, date: '1h ago' },
+      { id: 3, user: 'Mike T.', type: 'General Post', text: 'Meal prep Sunday done. 5 days of chicken & rice ready. 💪', likes: 9, likedByMe: false, date: '5h ago' }
+    ],
+    library: [
+      { id: 1, title: 'Foundations: First 30 Days', desc: 'A starter guide for new clients.', tier: 'Free', price: 0, filename: 'foundations-30-days.pdf', unlocked: true },
+      { id: 2, title: 'Advanced Strength Blueprint', desc: '12-week periodized strength program.', tier: 'Paid', price: 39.99, filename: 'advanced-strength-blueprint.pdf', unlocked: false }
+    ],
+    slots: [
+      { id: 1, time: '2026-08-01T09:00', booked: false },
+      { id: 2, time: '2026-08-03T15:00', booked: false },
+      { id: 3, time: '2026-08-05T11:00', booked: false }
+    ],
+    mySessions: [
+      { id: 1, topic: 'Monthly Q&A - Form Check', time: '2026-08-08T18:00', access: 'All Clients' }
+    ],
+    shop: [
+      { id: 1, name: 'Elite Shaker Bottle', price: 29.99, category: 'Merch', image: '' },
+      { id: 2, name: '12-Week PDF Program', price: 49.99, category: 'Digital Product', image: '' }
+    ],
+    contracts: [
+      { id: 1, title: 'Coaching Agreement', status: 'Signed', date: '2 weeks ago' },
+      { id: 2, title: 'Liability Waiver', status: 'Pending Signature', date: '3 days ago' }
+    ],
+    workoutSets: [
+      { id: 1, text: 'Bench Press 4x8', done: false },
+      { id: 2, text: 'Overhead Press 3x10', done: false },
+      { id: 3, text: 'Lateral Raises 3x15', done: false },
+      { id: 4, text: 'Tricep Dips 3x12', done: false }
+    ],
+    workoutHistory: [
+      { date: '2026-07-28', title: 'Week 3 - Hypertrophy Push' },
+      { date: '2026-07-26', title: 'Week 3 - Lower Body' },
+      { date: '2026-07-24', title: 'Week 3 - Hypertrophy Push' },
+      { date: '2026-07-21', title: 'Week 2 - Lower Body' }
+    ],
+    macroTargets: { calories: 2400, protein: 180, carbs: 220, fats: 70 },
+    meals: [
+      { id: 1, name: 'Oats + protein shake', protein: 40, carbs: 55, fats: 10, calories: 460, time: '7:30 AM' },
+      { id: 2, name: 'Chicken, rice, broccoli', protein: 50, carbs: 60, fats: 12, calories: 540, time: '12:30 PM' }
+    ],
+    goals: [
+      { id: 1, title: 'Bench Press 1RM', current: 155, target: 185, unit: 'lbs' },
+      { id: 2, title: 'Bodyweight', current: 174, target: 165, unit: 'lbs' },
+      { id: 3, title: 'Consecutive check-in streak', current: 12, target: 30, unit: 'days' }
+    ],
+    badges: [
+      { id: 1, icon: '🔥', label: '10-Day Streak', earned: true },
+      { id: 2, icon: '💪', label: 'First Plan Completed', earned: true },
+      { id: 3, icon: '⭐', label: '5 Check-Ins', earned: true },
+      { id: 4, icon: '🏆', label: '30-Day Streak', earned: false },
+      { id: 5, icon: '📈', label: 'First Goal Hit', earned: false },
+      { id: 6, icon: '🎯', label: 'Perfect Week', earned: false }
+    ],
+    submissions: [
+      { id: 1, exercise: 'Romanian Deadlift', filename: 'rdl_form.mp4', notes: 'Lower back feels tight at the bottom.', status: 'Reviewed', date: '3 days ago', feedback: 'Good bar path — keep your shins more vertical on the descent to take pressure off the lower back.' }
+    ],
+    referrals: { count: 2, rewards: 0 },
+    invoices: [
+      { id: 1, desc: 'March coaching package', amount: 300, status: 'Paid', due: '2025-03-01' },
+      { id: 2, desc: 'April coaching package', amount: 300, status: 'Unpaid', due: '2026-08-15' }
+    ]
+  };
+}
+
+async function loadData() {
+  try {
+    const result = await window.storage.get(DATA_KEY, false);
+    db = (result && result.value) ? JSON.parse(result.value) : defaultData();
+  } catch (e) {
+    db = defaultData();
+  }
+}
+async function saveData() {
+  try { await window.storage.set(DATA_KEY, JSON.stringify(db), false); }
+  catch (e) { console.error('Storage error:', e); }
+}
+
+// ==========================================
+// APP ENTRY
+// ==========================================
+async function enterApp() {
+  await loadData();
+  renderAll();
+  maybeShowWelcome();
+}
+
+// ==========================================
+// ROUTER
+// ==========================================
+window.openSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarBackdrop').classList.remove('hidden'); };
+window.closeSidebar = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.add('hidden'); };
+window.goToAccount = (e) => { e.preventDefault(); navigateTo('account'); closeSidebar(); };
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', e => { e.preventDefault(); navigateTo(link.dataset.page); closeSidebar(); });
+});
+function navigateTo(page) {
+  document.querySelectorAll('.nav-link').forEach(l => { l.classList.remove('active','text-white'); l.classList.add('text-muted'); });
+  const link = document.querySelector(`.nav-link[data-page="${page}"]`);
+  if (link) { link.classList.add('active','text-white'); link.classList.remove('text-muted'); }
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pageEl = document.getElementById('page-'+page);
+  if (pageEl) pageEl.classList.add('active');
+  renderAll();
+}
+
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+// ==========================================
+// RENDER
+// ==========================================
+let weightChartInstance = null, metricsChartInstance = null;
+
+function renderAll() {
+  document.getElementById('dash-name').innerText = db.client.name.split(' ')[0];
+  document.getElementById('sidebar-name').innerText = db.client.name;
+  document.getElementById('sidebar-avatar').innerText = initials(db.client.name);
+  document.getElementById('account-avatar').innerText = initials(db.client.name);
+  document.getElementById('account-name-display').innerText = db.client.name;
+  const nf = document.querySelector('#form-account [name="name"]'); if (nf) nf.value = db.client.name;
+  const ef = document.querySelector('#form-account [name="email"]'); if (ef) ef.value = db.client.email;
+  const bf = document.querySelector('#form-account [name="bio"]'); if (bf) bf.value = db.client.bio;
+
+  const sections = [
+    renderReadiness, renderStreak, renderPlanSnapshot, renderChecklist, renderHabits, renderWeightChart,
+    renderPlanPage, renderChatThread, renderMetricsChart, renderBooking, renderLibrary, renderCommunity,
+    renderShop, renderContracts, renderNotifBell,
+    renderWorkoutLog, renderNutrition, renderGoals, renderFormCheck, renderReferrals, renderBilling
+  ];
+  sections.forEach(fn => { try { fn(); } catch (e) { console.error(fn.name + ' failed:', e); } });
+
+  applyTranslations();
+}
+
+// ---- Readiness ----
+function readinessStatus(sleep, sore, stress) {
+  const score = sleep - (sore*0.5) - (stress*0.5);
+  if (score >= 5) return 'green';
+  if (score >= 2) return 'yellow';
+  return 'red';
+}
+function renderReadiness() {
+  const ring = document.getElementById('readiness-ring');
+  const emoji = document.getElementById('readiness-emoji');
+  const label = document.getElementById('readiness-label');
+  const btn = document.getElementById('checkin-btn');
+  if (!db.readiness.checkedInToday) {
+    ring.style.stroke = '#1E1E1E';
+    ring.style.strokeDashoffset = 390;
+    emoji.innerText = '—';
+    label.innerText = 'Not checked in';
+    btn.innerText = 'Check In';
+    return;
+  }
+  const status = db.readiness.status;
+  const colors = { green:'#3BE07A', yellow:'#F5B942', red:'#F55151' };
+  const emojis = { green:'🟢', yellow:'🟡', red:'🔴' };
+  const labels = { green:'Go hard today', yellow:'Take it moderate', red:'Recovery recommended' };
+  const pct = { green: 0.92, yellow: 0.6, red: 0.3 }[status];
+  ring.style.stroke = colors[status];
+  ring.style.strokeDashoffset = 390 - (390 * pct);
+  emoji.innerText = emojis[status];
+  label.innerText = labels[status];
+  btn.innerText = 'Update Check-In';
+}
+window.openCheckin = () => {
+  document.getElementById('checkin-sleep').value = db.readiness.sleep;
+  document.getElementById('checkin-sore').value = db.readiness.sore;
+  document.getElementById('checkin-stress').value = db.readiness.stress;
+  document.getElementById('checkin-sleep-val').innerText = db.readiness.sleep;
+  document.getElementById('checkin-sore-val').innerText = db.readiness.sore;
+  document.getElementById('checkin-stress-val').innerText = db.readiness.stress;
+  document.getElementById('checkinModal').classList.remove('hidden');
+};
+window.closeCheckin = () => document.getElementById('checkinModal').classList.add('hidden');
+['sleep','sore','stress'].forEach(k => {
+  document.getElementById('checkin-'+k).addEventListener('input', e => {
+    document.getElementById('checkin-'+k+'-val').innerText = e.target.value;
+  });
+});
+document.getElementById('form-checkin').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const sleep = parseInt(f.get('sleep')), sore = parseInt(f.get('sore')), stress = parseInt(f.get('stress'));
+  db.readiness = { checkedInToday: true, sleep, sore, stress, status: readinessStatus(sleep, sore, stress) };
+  saveData(); closeCheckin(); renderAll();
+  toast('✅ Check-in submitted — your coach can see this now.');
+};
+
+// ---- Streak ----
+function renderStreak() {
+  document.getElementById('streak-count').innerText = db.points.streak;
+  document.getElementById('streak-points').innerText = db.points.points;
+  document.getElementById('streak-flame').classList.toggle('lit', db.points.streak > 0);
+}
+
+// ---- Plan snapshot ----
+function renderPlanSnapshot() {
+  const el = document.getElementById('dash-plan-snapshot');
+  if (!el) return;
+  const firstLine = (db.plan.details || '').split('\n')[0];
+  el.innerHTML = `<p class="text-white text-sm font-medium">${db.plan.title}</p><p class="text-muted text-xs mt-1">${firstLine}</p>`;
+}
+
+// ---- Checklist ----
+function renderChecklist() {
+  const el = document.getElementById('dash-checklist');
+  if (!el) return;
+  const items = [
+    { done: db.readiness.checkedInToday, label: 'Complete today\'s check-in', page: null, action: 'checkin' },
+    { done: db.habits.every(h=>h.done), label: 'Finish today\'s habits', page: null },
+    { done: db.metrics.length > 0, label: 'Log a body metric', page: 'vault' },
+    { done: db.mySessions.length > 0, label: 'Book a session with your coach', page: 'booking' },
+  ];
+  const doneCount = items.filter(i=>i.done).length;
+  if (doneCount === items.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="display text-sm font-semibold text-white tracking-wide uppercase">Today's Checklist</h3>
+      <span class="text-[10px] text-muted">${doneCount}/${items.length} complete</span>
+    </div>
+    <div class="divide-y divide-border">
+      ${items.map(i => `
+        <button onclick="${i.action==='checkin' ? 'openCheckin()' : (i.page ? `navigateTo('${i.page}')` : '')}" class="checklist-item w-full text-left">
+          <span class="checklist-check ${i.done?'done':''}">${i.done?'✓':''}</span>
+          <span class="text-sm ${i.done?'text-muted line-through':'text-text'}">${i.label}</span>
+        </button>`).join('')}
+    </div>`;
+}
+
+// ---- Habits ----
+function renderHabits() {
+  ['dash-habits'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = db.habits.map(h => `
+      <div class="flex items-center gap-3">
+        <span class="habit-check ${h.done?'done':''}" onclick="toggleHabit(${h.id})">${h.done?'✓':''}</span>
+        <span class="text-sm ${h.done?'text-muted line-through':'text-text'}">${h.text}</span>
+      </div>`).join('');
+  });
+}
+window.toggleHabit = (id) => {
+  const h = db.habits.find(x=>x.id===id);
+  if (h) { h.done = !h.done; saveData(); renderHabits(); renderChecklist(); }
+};
+
+// ---- Weight chart (dashboard) ----
+function renderWeightChart() {
+  const canvas = document.getElementById('weightChart');
+  if (!canvas) return;
+  if (weightChartInstance) weightChartInstance.destroy();
+  const cctx = canvas.getContext('2d');
+  const grad = cctx.createLinearGradient(0,0,0,260);
+  grad.addColorStop(0,'rgba(108,92,231,0.30)'); grad.addColorStop(1,'rgba(108,92,231,0)');
+  weightChartInstance = new Chart(cctx, { type:'line', data:{ labels: db.metrics.map(d=>d.date), datasets:[{ label:'Weight (lbs)', data: db.metrics.map(d=>d.weight), borderColor:'#6C5CE7', backgroundColor:grad, borderWidth:2.5, fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#000', pointBorderColor:'#6C5CE7' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#8A8A8E', font:{size:11} } } }, scales:{ x:{ grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8A8A8E',font:{size:10}} }, y:{ grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8A8A8E',font:{size:10}} } } } });
+}
+function renderMetricsChart() {
+  const canvas = document.getElementById('metricsChart');
+  if (!canvas) return;
+  if (metricsChartInstance) metricsChartInstance.destroy();
+  const cctx = canvas.getContext('2d');
+  metricsChartInstance = new Chart(cctx, { type:'line', data:{ labels: db.metrics.map(d=>d.date), datasets:[{ label:'Weight (lbs)', data: db.metrics.map(d=>d.weight), borderColor:'#6C5CE7', backgroundColor:'rgba(108,92,231,0.15)', borderWidth:2.5, fill:true, tension:0.35, pointRadius:3, pointBackgroundColor:'#000', pointBorderColor:'#6C5CE7' },{ label:'Waist (in)', data: db.metrics.map(d=>d.waist), borderColor:'#F5B942', backgroundColor:'rgba(245,185,66,0)', borderWidth:2, borderDash:[4,4], fill:false, tension:0.35, pointRadius:3 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:'#8A8A8E', font:{size:11} } } }, scales:{ x:{ grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8A8A8E',font:{size:10}} }, y:{ grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#8A8A8E',font:{size:10}} } } } });
+}
+
+// ---- Plan page ----
+function renderPlanPage() {
+  const el = document.getElementById('current-plan-detail');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="display text-xl font-bold text-white">${db.plan.title}</h3>
+      <span class="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent">${db.plan.type}</span>
+    </div>
+    <p class="text-muted text-xs mb-4">Sent ${db.plan.sent} by ${db.client.coach}</p>
+    <div class="space-y-2">
+      ${db.plan.details.split('\n').filter(Boolean).map(line => `<div class="exercise-row"><p class="text-sm text-text">${line}</p></div>`).join('')}
+    </div>`;
+  const hist = document.getElementById('plan-history');
+  hist.innerHTML = db.planHistory.length ? db.planHistory.map(p => `
+    <div class="bg-black border border-border rounded-xl p-4">
+      <div class="flex items-center gap-2"><h4 class="text-white text-sm font-semibold">${p.title}</h4><span class="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent">${p.type}</span></div>
+      <p class="text-muted text-xs mt-1">${p.sent}</p>
+      <p class="text-text text-xs mt-2 whitespace-pre-line">${p.details}</p>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-6">No earlier plans yet.</p>';
+}
+
+// ---- Chat ----
+function renderChatThread() {
+  const el = document.getElementById('chat-thread');
+  if (!el) return;
+  el.innerHTML = db.chat.length ? db.chat.map(m => `
+    <div class="flex ${m.from==='me'?'justify-end':'justify-start'}">
+      <div class="max-w-[70%] px-4 py-2 text-sm ${m.from==='me'?'chat-bubble-me':'chat-bubble-them'}">
+        ${m.text}
+        <div class="text-[10px] opacity-60 mt-1">${m.time}</div>
+      </div>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10">Start the conversation.</p>';
+  el.scrollTop = el.scrollHeight;
+}
+document.getElementById('form-chat').onsubmit = e => {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  if (!input.value.trim()) return;
+  db.chat.push({ from:'me', text: input.value.trim(), time: 'Just now' });
+  input.value = '';
+  saveData(); renderChatThread();
+};
+
+// ---- Body metrics form ----
+document.getElementById('form-metrics').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  db.metrics.push({ date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}), weight: parseFloat(f.get('weight')), waist: parseFloat(f.get('waist'))||null });
+  saveData(); e.target.reset(); renderAll();
+  toast('✅ Metrics logged.');
+};
+
+// ---- Vault slider ----
+document.getElementById('vaultSlider').addEventListener('input', e => {
+  const v = e.target.value;
+  document.getElementById('vaultAfter').style.clipPath = `inset(0 0 0 ${v}%)`;
+  document.getElementById('vaultLine').style.left = v+'%';
+  document.getElementById('vaultHandle').style.left = v+'%';
+});
+
+// ---- Booking ----
+function renderBooking() {
+  const openEl = document.getElementById('list-open-slots');
+  const myEl = document.getElementById('list-my-sessions');
+  if (openEl) {
+    const open = db.slots.filter(s => !s.booked);
+    openEl.innerHTML = open.length ? open.map(s => `
+      <div class="slot-chip">
+        <p class="text-white text-sm font-medium">${new Date(s.time).toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'})}</p>
+        <p class="text-muted text-xs">${new Date(s.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</p>
+        <button onclick="bookSlot(${s.id})" class="mt-2 w-full py-1.5 bg-accent/15 text-accent text-xs font-semibold rounded-lg hover:bg-accent/25 transition">Book This Slot</button>
+      </div>`).join('') : '<p class="text-muted text-sm text-center py-10 sm:col-span-2">No open slots right now — check back soon.</p>';
+  }
+  if (myEl) {
+    const all = [...db.mySessions.map(s=>({...s, kind:'session'})), ...db.slots.filter(s=>s.booked).map(s=>({...s, kind:'slot', topic:'1:1 Coaching Call'}))];
+    all.sort((a,b)=> new Date(a.time) - new Date(b.time));
+    myEl.innerHTML = all.length ? all.map(s => `
+      <div class="bg-black border border-border rounded-xl p-4">
+        <p class="text-white text-sm font-medium">${s.topic}</p>
+        <p class="text-muted text-xs mt-0.5">${new Date(s.time).toLocaleString('en-US',{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'})}</p>
+      </div>`).join('') : '<p class="text-muted text-sm text-center py-6">Nothing booked yet.</p>';
+  }
+}
+window.bookSlot = (id) => {
+  const s = db.slots.find(x=>x.id===id);
+  if (s) { s.booked = true; saveData(); renderAll(); toast('✅ Session booked — you\'ll see it under My Sessions.'); }
+};
+
+// ---- Library ----
+function renderLibrary() {
+  const el = document.getElementById('list-library');
+  if (!el) return;
+  el.innerHTML = db.library.length ? db.library.map(r => `
+    <div class="card rounded-2xl p-5">
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-2xl">📄</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${r.tier==='Free'?'bg-green-500/15 text-green-400':'bg-gold/15 text-gold'}">${r.tier==='Free'?'FREE':'$'+r.price.toFixed(2)}</span>
+      </div>
+      <h4 class="text-white font-semibold text-sm">${r.title}</h4>
+      <p class="text-muted text-xs mt-1">${r.desc||''}</p>
+      <button onclick="${r.unlocked ? `toast('📥 Downloading ${r.filename}...')` : `unlockResource(${r.id})`}" class="mt-4 w-full py-2 ${r.unlocked ? 'bg-accent/15 text-accent' : 'bg-accent text-white glow'} text-xs font-semibold rounded-lg transition">${r.unlocked ? 'Download' : 'Unlock for $'+r.price.toFixed(2)}</button>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10 col-span-3">Nothing here yet.</p>';
+}
+window.unlockResource = (id) => {
+  const r = db.library.find(x=>x.id===id);
+  if (r) { r.unlocked = true; saveData(); renderLibrary(); toast('✅ Unlocked "'+r.title+'".'); }
+};
+
+// ---- Community ----
+document.getElementById('form-community').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  db.community.unshift({ id: Date.now(), user: db.client.name, type: 'General Post', text: f.get('post'), likes: 0, likedByMe: false, date: 'Just now' });
+  saveData(); e.target.reset(); renderCommunity();
+};
+function renderCommunity() {
+  const el = document.getElementById('list-community');
+  if (!el) return;
+  el.innerHTML = db.community.map(p => `
+    <div class="card rounded-2xl p-6">
+      <div class="flex justify-between items-start"><div><h4 class="text-white font-semibold">${p.user}</h4><span class="text-[10px] px-2 py-0.5 rounded-full ${p.type==='Challenge'?'bg-gold/15 text-gold':p.type==='Announcement'?'bg-accent/15 text-accent':'bg-border text-muted'}">${p.type}</span></div><span class="text-muted text-xs">${p.date}</span></div>
+      <p class="text-text mt-3">${p.text}</p>
+      <button onclick="toggleLike(${p.id})" class="mt-3 text-sm ${p.likedByMe ? 'text-accent' : 'text-muted'} hover:text-accent transition">❤️ ${p.likes}</button>
+    </div>`).join('');
+}
+window.toggleLike = (id) => {
+  const p = db.community.find(x=>x.id===id);
+  if (p) { p.likedByMe = !p.likedByMe; p.likes += p.likedByMe ? 1 : -1; saveData(); renderCommunity(); }
+};
+
+// ---- Shop ----
+function renderShop() {
+  const el = document.getElementById('list-shop');
+  if (!el) return;
+  el.innerHTML = db.shop.length ? db.shop.map(p => `
+    <div class="card rounded-2xl overflow-hidden">
+      <div class="h-32 bg-card2 flex items-center justify-center text-4xl">${p.image?`<img src="${p.image}" class="w-full h-full object-cover">`:'📦'}</div>
+      <div class="p-4">
+        <h4 class="text-white font-semibold text-sm">${p.name}</h4>
+        <p class="text-accent font-bold text-sm mt-1">$${p.price.toFixed(2)}</p>
+        <p class="text-muted text-[10px] mt-1">${p.category}</p>
+        <button onclick="toast('🛒 Added ${p.name} to cart.')" class="mt-3 w-full py-2 bg-accent/15 text-accent text-xs font-semibold rounded-lg hover:bg-accent/25 transition">Add to Cart</button>
+      </div>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10 col-span-3">Nothing in the shop yet.</p>';
+}
+
+// ---- Contracts ----
+function renderContracts() {
+  const el = document.getElementById('list-contracts');
+  if (!el) return;
+  el.innerHTML = db.contracts.length ? db.contracts.map(c => `
+    <div class="bg-black border border-border rounded-xl p-4 flex items-center justify-between gap-3">
+      <div><p class="text-white text-sm font-medium">${c.title}</p><p class="text-muted text-xs mt-0.5">${c.date}</p></div>
+      <div class="flex items-center gap-3">
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium ${c.status==='Signed'?'bg-green-500/15 text-green-400':'bg-gold/15 text-gold'}">${c.status}</span>
+        ${c.status!=='Signed' ? `<button onclick="signContract(${c.id})" class="text-accent text-xs hover:underline">Sign Now</button>` : ''}
+      </div>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10">No contracts yet.</p>';
+}
+window.signContract = (id) => { const c = db.contracts.find(x=>x.id===id); if(c){ c.status='Signed'; saveData(); renderContracts(); toast('✅ Signed "'+c.title+'".'); } };
+
+// ---- Workout Log ----
+function renderWorkoutLog() {
+  const el = document.getElementById('workout-checklist');
+  if (el) {
+    el.innerHTML = db.workoutSets.map(s => `
+      <div class="flex items-center gap-3">
+        <span class="habit-check ${s.done?'done':''}" onclick="toggleWorkoutSet(${s.id})">${s.done?'✓':''}</span>
+        <span class="text-sm ${s.done?'text-muted line-through':'text-text'}">${s.text}</span>
+      </div>`).join('');
+    const doneCount = db.workoutSets.filter(s=>s.done).length;
+    document.getElementById('workout-progress-label').innerText = `${doneCount} / ${db.workoutSets.length} sets logged`;
+  }
+  const calEl = document.getElementById('workout-calendar');
+  if (calEl) {
+    const today = new Date();
+    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
+    const days = Array.from({length:7}, (_,i) => { const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i); return d; });
+    calEl.innerHTML = days.map(d => {
+      const dayStr = d.toISOString().slice(0,10);
+      const isToday = d.toDateString() === today.toDateString();
+      const worked = db.workoutHistory.some(w => w.date === dayStr);
+      return `<div class="cal-day ${isToday?'today':''}">
+        <p class="text-[10px] text-muted uppercase">${d.toLocaleDateString('en-US',{weekday:'short'})}</p>
+        <p class="text-white text-sm font-semibold mb-2">${d.getDate()}</p>
+        ${worked ? '<div class="bg-accent/15 text-accent text-[10px] rounded px-1.5 py-0.5">Trained</div>' : ''}
+      </div>`;
+    }).join('');
+  }
+  const histEl = document.getElementById('workout-history');
+  if (histEl) {
+    histEl.innerHTML = db.workoutHistory.length ? db.workoutHistory.map(w => `
+      <div class="flex justify-between text-xs bg-black border border-border rounded-lg px-3 py-2">
+        <span class="text-text">${w.title}</span>
+        <span class="text-muted">${new Date(w.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+      </div>`).join('') : '<p class="text-muted text-xs text-center py-4">No sessions logged yet.</p>';
+  }
+}
+window.toggleWorkoutSet = (id) => {
+  const s = db.workoutSets.find(x=>x.id===id);
+  if (s) { s.done = !s.done; saveData(); renderWorkoutLog(); }
+};
+window.finishWorkout = () => {
+  const todayStr = new Date().toISOString().slice(0,10);
+  if (!db.workoutHistory.some(w=>w.date===todayStr)) {
+    db.workoutHistory.unshift({ date: todayStr, title: db.plan.title });
+    db.points.streak += 1;
+    db.points.points += 25;
+  }
+  db.workoutSets.forEach(s => s.done = true);
+  saveData(); renderAll();
+  toast('✅ Workout logged — nice work.');
+};
+
+// ---- Nutrition ----
+let macroChartInstance = null;
+function renderNutrition() {
+  const logEl = document.getElementById('meal-log');
+  if (logEl) {
+    logEl.innerHTML = db.meals.length ? db.meals.map(m => `
+      <div class="bg-black border border-border rounded-lg p-3 flex justify-between items-start gap-2">
+        <div><p class="text-white text-sm font-medium">${m.name}</p><p class="text-muted text-[11px] mt-0.5">${m.time} · P${m.protein||0} C${m.carbs||0} F${m.fats||0}</p></div>
+        <button onclick="delMeal(${m.id})" class="text-red-400/50 hover:text-red-400 text-xs shrink-0">✕</button>
+      </div>`).join('') : '<p class="text-muted text-sm text-center py-6">No meals logged today.</p>';
+  }
+  const totals = db.meals.reduce((a,m) => ({ protein: a.protein+(m.protein||0), carbs: a.carbs+(m.carbs||0), fats: a.fats+(m.fats||0), calories: a.calories+(m.calories || (m.protein*4+m.carbs*4+m.fats*9)) }), {protein:0,carbs:0,fats:0,calories:0});
+  const t = db.macroTargets;
+  const sumEl = document.getElementById('macro-summary');
+  if (sumEl) {
+    sumEl.innerHTML = [
+      ['Calories', Math.round(totals.calories), t.calories],
+      ['Protein', Math.round(totals.protein)+'g', t.protein+'g'],
+      ['Carbs', Math.round(totals.carbs)+'g', t.carbs+'g'],
+      ['Fats', Math.round(totals.fats)+'g', t.fats+'g']
+    ].map(([label,val,target]) => `<div class="flex justify-between"><span class="text-muted">${label}</span><span class="text-text">${val} <span class="text-muted">/ ${target}</span></span></div>`).join('');
+  }
+  const canvas = document.getElementById('macroChart');
+  if (canvas) {
+    if (macroChartInstance) macroChartInstance.destroy();
+    macroChartInstance = new Chart(canvas.getContext('2d'), { type:'doughnut', data:{ labels:['Protein','Carbs','Fats'], datasets:[{ data:[totals.protein, totals.carbs, totals.fats], backgroundColor:['#6C5CE7','#F5B942','#8A8A8E'], borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#8A8A8E', font:{size:10}, boxWidth:10 } } }, cutout:'65%' } });
+  }
+}
+document.getElementById('form-meal').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  db.meals.push({ id: Date.now(), name: f.get('name'), protein: parseFloat(f.get('protein'))||0, carbs: parseFloat(f.get('carbs'))||0, fats: parseFloat(f.get('fats'))||0, calories: parseFloat(f.get('calories'))||0, time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) });
+  saveData(); e.target.reset(); renderNutrition();
+  toast('✅ Meal logged.');
+};
+window.delMeal = (id) => { db.meals = db.meals.filter(m=>m.id!==id); saveData(); renderNutrition(); };
+
+// ---- Goals & Badges ----
+function renderGoals() {
+  const el = document.getElementById('list-goals');
+  if (!el) return;
+  el.innerHTML = db.goals.length ? db.goals.map(g => {
+    const start = g.startValue !== undefined ? g.startValue : g.current;
+    const isIncreasing = g.target >= start;
+    let pct = isIncreasing
+      ? ((g.current - start) / ((g.target - start) || 1)) * 100
+      : ((start - g.current) / ((start - g.target) || 1)) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+    if (g.current === g.target) pct = 100;
+    return `
+    <div class="bg-black border border-border rounded-xl p-4">
+      <div class="flex justify-between items-center mb-2">
+        <p class="text-white text-sm font-medium">${g.title}</p>
+        <button onclick="delGoal(${g.id})" class="text-red-400/50 hover:text-red-400 text-xs">✕</button>
+      </div>
+      <div class="flex justify-between text-xs text-muted mb-1"><span>${g.current} ${g.unit}</span><span>Goal: ${g.target} ${g.unit}</span></div>
+      <div class="w-full h-2 bg-border rounded-full overflow-hidden"><div class="h-full bg-accent rounded-full" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('') : '<p class="text-muted text-sm text-center py-10">No goals yet — add your first one.</p>';
+
+  const bEl = document.getElementById('list-badges');
+  if (bEl) {
+    bEl.innerHTML = db.badges.map(b => `
+      <div class="bg-black border border-border rounded-xl p-4 text-center ${b.earned?'':'opacity-35'}">
+        <div class="text-3xl mb-1">${b.icon}</div>
+        <p class="text-white text-[11px] font-medium">${b.label}</p>
+      </div>`).join('');
+  }
+}
+window.openAddGoal = () => document.getElementById('goalModal').classList.remove('hidden');
+window.closeAddGoal = () => document.getElementById('goalModal').classList.add('hidden');
+document.getElementById('form-goal').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const current = parseFloat(f.get('current'));
+  db.goals.push({ id: Date.now(), title: f.get('title'), current, startValue: current, target: parseFloat(f.get('target')), unit: f.get('unit')||'' });
+  saveData(); e.target.reset(); closeAddGoal(); renderGoals();
+  toast('✅ Goal added.');
+};
+window.delGoal = (id) => { db.goals = db.goals.filter(g=>g.id!==id); saveData(); renderGoals(); };
+
+// ---- Form Check ----
+function renderFormCheck() {
+  const el = document.getElementById('list-submissions');
+  if (!el) return;
+  el.innerHTML = db.submissions.length ? db.submissions.map(s => `
+    <div class="bg-black border border-border rounded-xl p-4">
+      <div class="flex justify-between items-start">
+        <div><h4 class="text-white text-sm font-semibold">${s.exercise}</h4><p class="text-muted text-xs mt-0.5">${s.filename} · ${s.date}</p></div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium ${s.status==='Reviewed'?'bg-green-500/15 text-green-400':'bg-gold/15 text-gold'}">${s.status}</span>
+      </div>
+      ${s.notes ? `<p class="text-text text-xs mt-2">Your note: "${s.notes}"</p>` : ''}
+      ${s.feedback ? `<div class="mt-3 bg-accent/10 border border-accent/30 rounded-lg p-3"><p class="text-accent text-[11px] font-semibold mb-1">Coach feedback</p><p class="text-text text-xs">${s.feedback}</p></div>` : ''}
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10">No submissions yet.</p>';
+}
+document.getElementById('form-submission').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const file = f.get('file');
+  db.submissions.unshift({ id: Date.now(), exercise: f.get('exercise'), filename: file && file.name ? file.name : 'video.mp4', notes: f.get('notes'), status: 'Pending Review', date: 'Just now', feedback: null });
+  saveData(); e.target.reset(); renderFormCheck();
+  toast('✅ Submitted for review.');
+};
+
+// ---- Referrals ----
+function renderReferrals() {
+  const c = document.getElementById('ref-count'); if (c) c.innerText = db.referrals.count;
+  const r = document.getElementById('ref-rewards'); if (r) r.innerText = db.referrals.rewards;
+  const n = document.getElementById('ref-next'); if (n) n.innerText = Math.max(0, 3 - (db.referrals.count % 3));
+}
+window.copyRef = () => {
+  const el = document.getElementById('ref-link');
+  navigator.clipboard.writeText(el.value);
+  toast('🔗 Referral link copied.');
+};
+
+// ---- Billing ----
+function renderBilling() {
+  const el = document.getElementById('list-billing');
+  if (!el) return;
+  const due = db.invoices.filter(i=>i.status!=='Paid').reduce((a,b)=>a+b.amount,0);
+  const paid = db.invoices.filter(i=>i.status==='Paid').reduce((a,b)=>a+b.amount,0);
+  const dueEl = document.getElementById('bill-due'); if (dueEl) dueEl.innerText = '$'+due.toFixed(2);
+  const paidEl = document.getElementById('bill-paid'); if (paidEl) paidEl.innerText = '$'+paid.toFixed(2);
+  const statusColor = { Paid:'bg-green-500/15 text-green-400', Unpaid:'bg-gold/15 text-gold', Overdue:'bg-red-500/15 text-red-400' };
+  el.innerHTML = db.invoices.length ? db.invoices.map(i => `
+    <div class="bg-black border border-border rounded-xl p-4 flex items-center justify-between gap-3">
+      <div class="min-w-0"><p class="text-white font-medium text-sm truncate">${i.desc}</p><p class="text-muted text-xs mt-0.5">Due ${i.due}</p></div>
+      <div class="flex items-center gap-3 shrink-0">
+        <span class="text-white font-semibold text-sm">$${i.amount.toFixed(2)}</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColor[i.status]}">${i.status}</span>
+        ${i.status!=='Paid' ? `<button onclick="payInvoice(${i.id})" class="px-3 py-1 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-indigo-500 transition">Pay Now</button>` : ''}
+      </div>
+    </div>`).join('') : '<p class="text-muted text-sm text-center py-10">No invoices yet.</p>';
+}
+window.payInvoice = (id) => { const inv = db.invoices.find(i=>i.id===id); if(inv){ inv.status='Paid'; saveData(); renderBilling(); toast('✅ Payment received — thank you!'); } };
+
+// ---- Command Palette ----
+function paletteItems() {
+  return [
+    ['dashboard','Dashboard','◆'],['plan','My Plan','▤'],['workoutlog','Workout Log','▥'],
+    ['nutrition','Nutrition','◍'],['goals','Goals & Badges','⬢'],['messages','Messages','✉'],
+    ['formcheck','Form Check','▶'],['vault','Progress','▣'],['booking','Book a Session','●'],
+    ['library','Resource Library','▦'],['community','Community','◐'],['referrals','Referrals','↗'],
+    ['billing','Billing','$'],['shop','Shop','▨'],['contracts','Contracts','✎'],['account','Account','◉']
+  ].map(([page,label,icon]) => ({ page, label, icon }));
+}
+window.openPalette = () => {
+  document.getElementById('paletteOverlay').classList.remove('hidden');
+  const input = document.getElementById('paletteInput');
+  input.value = '';
+  filterPalette();
+  if (window.innerWidth >= 768) setTimeout(()=>input.focus(), 50);
+};
+window.closePalette = () => document.getElementById('paletteOverlay').classList.add('hidden');
+window.filterPalette = () => {
+  const q = document.getElementById('paletteInput').value.toLowerCase();
+  const items = paletteItems().filter(i => i.label.toLowerCase().includes(q));
+  document.getElementById('paletteResults').innerHTML = items.length ? items.map(i => `
+    <button onclick="paletteSelect('${i.page}')" class="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-card2 text-left transition">
+      <span class="text-accent w-5 text-center">${i.icon}</span>
+      <span class="text-white text-sm flex-1">${i.label}</span>
+      <span class="text-muted text-[11px]">Go to page</span>
+    </button>`).join('') : '<p class="text-muted text-sm px-5 py-6 text-center">No matches.</p>';
+};
+window.paletteSelect = (page) => { closePalette(); navigateTo(page); };
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); }
+  if (e.key === 'Escape') { closePalette(); closeCheckin(); closeAddGoal(); }
+});
+
+// ---- Help & Guide ----
+const PAGE_INFO = [
+  { label:'Dashboard', icon:'◆', text:'Your home base. Check in daily using the readiness dial so your coach knows how you\'re feeling — that drives whether today should be a hard session or a lighter one. You\'ll also see your streak, points, today\'s habits, and a weight trend chart here.' },
+  { label:'My Plan', icon:'▤', text:'The training or nutrition program your coach most recently sent you, plus a history of everything they\'ve sent before.' },
+  { label:'Workout Log', icon:'▥', text:'Check off sets as you complete today\'s session, then mark the whole workout done — that builds your streak and logs it to your training calendar for the week.' },
+  { label:'Nutrition', icon:'◍', text:'Log meals with protein, carbs, and fats. The donut chart and summary show how today stacks up against the macro targets your coach set.' },
+  { label:'Goals & Badges', icon:'⬢', text:'Track personal goals (like a lift number or bodyweight target) with a progress bar, and see badges you\'ve earned for streaks and milestones.' },
+  { label:'Messages', icon:'✉', text:'Direct chat with your coach. Ask questions, get quick feedback, or just check in.' },
+  { label:'Form Check', icon:'▶', text:'Upload a video of a lift for your coach to review. Once they\'ve annotated it, their written feedback shows up right on your submission.' },
+  { label:'Progress', icon:'▣', text:'A before/after photo slider of your transformation, plus a place to log weight and waist measurements with a trend chart.' },
+  { label:'Book a Session', icon:'●', text:'Claim an open time slot on your coach\'s calendar, or see everything you already have scheduled.' },
+  { label:'Resource Library', icon:'▦', text:'Guides and programs your coach has published. Free ones download immediately; paid ones unlock with a click.' },
+  { label:'Community', icon:'◐', text:'A shared feed with your coach and other clients — challenges, announcements, and general posts. Like or post your own.' },
+  { label:'Referrals', icon:'↗', text:'Your personal referral link. Every friend who signs up through it earns you both a reward.' },
+  { label:'Billing', icon:'$', text:'Every invoice your coach has sent you — what\'s paid, what\'s due, and a one-click "Pay Now" for anything outstanding.' },
+  { label:'Shop', icon:'▨', text:'Merch and digital products your coach sells directly.' },
+  { label:'Contracts', icon:'✎', text:'Agreements and waivers sent by your coach. Sign anything pending right from here.' },
+  { label:'Account', icon:'◉', text:'Your profile — name, email, and notes for your coach about what you\'re working toward.' },
+];
+window.openHelp = () => {
+  document.getElementById('help-content').innerHTML = PAGE_INFO.map(p => `
+    <div class="flex items-start gap-3 pb-3 border-b border-border last:border-0">
+      <span class="text-accent w-5 text-center shrink-0">${p.icon}</span>
+      <div><p class="text-white text-sm font-semibold">${p.label}</p><p class="text-muted text-xs mt-0.5">${p.text}</p></div>
+    </div>`).join('');
+  document.getElementById('helpOverlay').classList.remove('hidden');
+};
+window.closeHelp = () => document.getElementById('helpOverlay').classList.add('hidden');
+
+// ---- Account ----
+document.getElementById('form-account').onsubmit = e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  db.client.name = f.get('name') || db.client.name;
+  db.client.email = f.get('email') || '';
+  db.client.bio = f.get('bio') || '';
+  saveData(); renderAll();
+  toast('✅ Profile updated.');
+};
+
+// ---- Notifications ----
+window.toggleNotifPanel = () => document.getElementById('notif-panel').classList.toggle('hidden');
+function renderNotifBell() {
+  const list = [];
+  if (!db.readiness.checkedInToday) list.push('You haven\'t checked in today yet.');
+  const openSlots = db.slots.filter(s=>!s.booked).length;
+  if (openSlots) list.push(`${openSlots} open session slot${openSlots>1?'s':''} available to book.`);
+  const pendingContracts = db.contracts.filter(c=>c.status!=='Signed').length;
+  if (pendingContracts) list.push(`${pendingContracts} contract${pendingContracts>1?'s':''} awaiting your signature.`);
+  const dot = document.getElementById('notif-dot');
+  if (dot) dot.classList.toggle('hidden', list.length === 0);
+  const panelList = document.getElementById('notif-list');
+  if (panelList) {
+    panelList.innerHTML = list.length ? list.map(t => `<div class="px-2 py-2 text-xs text-text border-b border-border last:border-0">${t}</div>`).join('') : '<div class="px-2 py-4 text-xs text-muted text-center">You\'re all caught up.</div>';
+  }
+}
+
+// ---- Welcome ----
+window.closeWelcome = () => { document.getElementById('welcomeModal').classList.add('hidden'); db.seenWelcome = true; saveData(); };
+function maybeShowWelcome() { if (!db.seenWelcome) document.getElementById('welcomeModal').classList.remove('hidden'); }
+
+// ---- Toast ----
+window.toast = (msg) => {
+  const wrap = document.getElementById('toastWrap');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerText = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(()=>el.remove(), 300); }, 2800);
+};
+
+// ==========================================
+// INIT
+// ==========================================
+(async function init() {
+  try {
+    await enterApp();
+  } catch (err) {
+    console.error('Startup error:', err);
+    db = db || defaultData();
+    try { renderAll(); } catch (e2) { console.error('Fallback render also failed:', e2); }
+  } finally {
+    const veil = document.getElementById('loadingVeil');
+    if (veil) { veil.style.opacity = '0'; setTimeout(()=>veil.remove(), 300); }
+  }
+})();
+</script>
+
+</body>
+</html>
