@@ -73,7 +73,7 @@ tailwind.config = {
   html[dir="rtl"] .nav-link.active { box-shadow: inset -2px 0 0 var(--accent-color); }
   html[dir="rtl"] .mr-3, html[dir="rtl"] .mr-2 { margin-right:0; margin-left:0.75rem; }
   html[dir="rtl"] .ml-3 { margin-left:0; margin-right:0.75rem; }
-  html[dir="rtl"] #sidebar { border-right:none; border-left:1px solid #1E1E1E; }
+  html[dir="rtl"] #sidebar { border-right:none; border-left:1px solid var(--border-c); }
   html[dir="rtl"] .chat-bubble-me { border-radius:14px 14px 14px 3px; }
   html[dir="rtl"] .chat-bubble-them { border-radius:14px 14px 3px 14px; }
 
@@ -84,6 +84,9 @@ tailwind.config = {
   /* Language dropdown */
   .lang-option { opacity:0.45; }
   .lang-option-active { opacity:1; background:color-mix(in srgb, var(--accent-color) 18%, transparent); }
+  #lang-panel { animation:langPop .15s ease; transform-origin:top right; }
+  html[dir="rtl"] #lang-panel { right:auto; left:0; transform-origin:top left; }
+  @keyframes langPop { from{ opacity:0; transform:scale(0.9) translateY(-4px);} to{ opacity:1; transform:scale(1) translateY(0);} }
 
   /* Quick actions FAB */
   #quick-actions-fab { transition:transform .2s ease, box-shadow .2s ease; box-shadow:0 8px 24px -6px color-mix(in srgb, var(--accent-color) 60%, transparent); }
@@ -101,7 +104,7 @@ tailwind.config = {
   .page.active { animation:rise .35s cubic-bezier(.2,.8,.2,1); }
 
   /* Nav hover polish */
-  .nav-link:not(.active):hover { background:#0D0D0D; color:#fff; }
+  .nav-link:not(.active):hover { background:var(--card-c); color:var(--text-c); }
 
   /* Theme swatches */
   .theme-swatch { width:40px; height:40px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:.15s; position:relative; }
@@ -110,7 +113,7 @@ tailwind.config = {
   .theme-swatch.selected::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,0.5); }
 
   /* Water cups */
-  .water-cup { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; border:1.5px solid #1E1E1E; background:#000; transition:.15s; }
+  .water-cup { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; border:1.5px solid var(--border-c); background:var(--bg-c); transition:.15s; }
   .water-cup.filled { background:color-mix(in srgb, var(--accent-color) 20%, transparent); border-color:var(--accent-color); }
 
   /* ===== Mobile-first polish ===== */
@@ -125,13 +128,17 @@ tailwind.config = {
   }
 
   /* Bottom tab bar (mobile only) */
-  #bottomNav { position:fixed; bottom:0; left:0; right:0; z-index:45; background:#0D0D0D; border-top:1px solid #1E1E1E; padding-bottom:env(safe-area-inset-bottom, 0px); display:flex; }
-  .bottom-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 2px 10px; color:#8A8A8E; font-size:10px; font-weight:500; transition:.15s; position:relative; }
-  .bottom-nav-item .bn-icon { font-size:19px; line-height:1; }
+  #bottomNav { position:fixed; bottom:0; left:0; right:0; z-index:45; background:var(--card-c); border-top:1px solid var(--border-c); padding-bottom:env(safe-area-inset-bottom, 0px); display:flex; }
+  .bottom-nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 2px 10px; color:var(--muted-c); font-size:10px; font-weight:500; transition:.15s; position:relative; }
+  .bottom-nav-item .bn-icon { font-size:19px; line-height:1; transition:.15s; }
   .bottom-nav-item.active { color:var(--accent-color); }
-  .bottom-nav-item.active .bn-icon { transform:translateY(-1px); }
-  .bottom-nav-dot { position:absolute; top:4px; right:calc(50% - 16px); width:7px; height:7px; background:var(--gold-color); border-radius:50%; border:1.5px solid #0D0D0D; }
+  .bottom-nav-item.active .bn-icon { transform:translateY(-1px); background:color-mix(in srgb, var(--accent-color) 15%, transparent); border-radius:10px; padding:3px 12px; }
+  .bottom-nav-dot { position:absolute; top:2px; right:calc(50% - 16px); width:7px; height:7px; background:var(--gold-color); border-radius:50%; border:1.5px solid var(--card-c); }
   @media (min-width: 768px) { #bottomNav { display:none; } }
+  @media (hover: hover) {
+    .card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    button.card:hover, a.card:hover, [onclick].card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -14px rgba(0,0,0,0.5); border-color: color-mix(in srgb, var(--accent-color) 30%, var(--border-c)); }
+  }
   @media (max-width: 767px) {
     html[dir="rtl"] #sidebar { transform:translateX(100%); left:auto; right:0; }
     html[dir="rtl"] #sidebar.open { transform:translateX(0); }
@@ -144,12 +151,12 @@ tailwind.config = {
   .page { display:none; }
   .page.active { display:block; animation:rise .3s ease; }
   @keyframes rise { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
-  .nav-link.active { background:#0D0D0D; color:#fff !important; box-shadow: inset 2px 0 0 var(--accent-color); }
+  .nav-link.active { background:var(--card-c); color:var(--text-c) !important; box-shadow: inset 2px 0 0 var(--accent-color); }
   .scrollbar-hide::-webkit-scrollbar { display:none; }
   .thin-scroll::-webkit-scrollbar { width:6px; }
   .thin-scroll::-webkit-scrollbar-thumb { background:var(--border-c); border-radius:4px; }
   .thin-scroll { -webkit-overflow-scrolling:touch; }
-  .vault-container { position:relative; width:100%; aspect-ratio:16/9; background:#0D0D0D; border-radius:10px; overflow:hidden; border:1px solid #1E1E1E; }
+  .vault-container { position:relative; width:100%; aspect-ratio:16/9; background:var(--card-c); border-radius:10px; overflow:hidden; border:1px solid var(--border-c); }
   .vault-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .vault-after { clip-path:inset(0 0 0 50%); }
   .vault-slider { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; z-index:10; }
@@ -165,7 +172,7 @@ tailwind.config = {
   .notif-dot { position:absolute; top:-2px; right:-2px; width:9px; height:9px; background:var(--gold-color); border-radius:50%; border:2px solid #000; }
   .notif-panel { position:absolute; top:48px; right:0; width:320px; max-width:calc(100vw - 32px); max-height:400px; overflow-y:auto; z-index:35; }
   .checklist-item { display:flex; align-items:center; gap:10px; padding:8px 0; }
-  .checklist-check { width:20px; height:20px; border-radius:6px; border:1.5px solid #2A2A2A; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
+  .checklist-check { width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border-c); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:12px; }
   .checklist-check.done { background:var(--accent-color); border-color:var(--accent-color); color:#fff; }
   #sidebar { transition: transform .25s ease; }
   @media (max-width: 767px) {
@@ -184,7 +191,7 @@ tailwind.config = {
   .cal-day { background:var(--card-c); border:1px solid var(--border-c); border-radius:10px; min-height:90px; padding:6px; }
   .cal-day.today { border-color:var(--accent-color); }
   .exercise-row { background:var(--card2-c); border:1px solid var(--border-c); border-radius:10px; padding:12px 14px; }
-  .habit-check { width:26px; height:26px; border-radius:8px; border:1.5px solid #2A2A2A; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; flex-shrink:0; }
+  .habit-check { width:26px; height:26px; border-radius:8px; border:1.5px solid var(--border-c); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s; flex-shrink:0; }
   .habit-check.done { background:var(--accent-color); border-color:var(--accent-color); }
   .flame { filter: grayscale(1) opacity(0.35); }
   .flame.lit { filter: none; }
@@ -192,7 +199,7 @@ tailwind.config = {
   .slot-chip { background:var(--card2-c); border:1px solid var(--border-c); border-radius:10px; padding:10px 14px; cursor:pointer; transition:.15s; }
   .slot-chip:hover { border-color:var(--accent-color); }
   .slot-chip.selected { border-color:var(--accent-color); background:color-mix(in srgb, var(--accent-color) 10%, transparent); }
-  .sig-box { border:1px dashed #2A2A2A; border-radius:10px; padding:16px; text-align:center; }
+  .sig-box { border:1px dashed var(--border-c); border-radius:10px; padding:16px; text-align:center; }
 </style>
 </head>
 <body class="text-text antialiased">
@@ -262,14 +269,20 @@ tailwind.config = {
 
   <!-- MAIN -->
   <div class="flex-1 flex flex-col overflow-hidden">
-    <div class="flex items-center gap-3 px-4 md:px-8 py-3 border-b border-border bg-card shrink-0">
+    <div class="flex items-center gap-3 px-4 md:px-8 py-3 border-b border-border bg-card shrink-0 sticky top-0 z-30" style="box-shadow:0 1px 0 var(--border-c)">
+      <h1 class="md:hidden display text-lg font-bold text-white flex items-center">Penguins <span class="mx-1">🐧</span><span class="text-accent">.</span></h1>
       <div class="flex-1"></div>
-      <div class="flex items-center gap-1.5 h-10 px-1.5 rounded-full bg-black border border-border" id="langSwitchWrap">
-        <button onclick="setLang('en')" data-lang="en" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇬🇧</button>
-        <button onclick="setLang('de')" data-lang="de" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇩🇪</button>
-        <button onclick="setLang('ar')" data-lang="ar" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇸🇦</button>
-        <button onclick="setLang('fr')" data-lang="fr" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇫🇷</button>
-        <button onclick="setLang('es')" data-lang="es" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇪🇸</button>
+      <div class="relative" id="langSwitchWrap">
+        <button onclick="toggleLangPanel(event)" class="w-10 h-10 rounded-full bg-black border border-border flex items-center justify-center text-sm hover:border-accent/50 transition">
+          <span id="lang-current-flag">🇬🇧</span>
+        </button>
+        <div id="lang-panel" class="hidden absolute top-12 right-0 flex items-center gap-1.5 p-1.5 rounded-full bg-black border border-border z-40 shadow-2xl">
+          <button onclick="setLang('en')" data-lang="en" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇬🇧</button>
+          <button onclick="setLang('de')" data-lang="de" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇩🇪</button>
+          <button onclick="setLang('ar')" data-lang="ar" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇸🇦</button>
+          <button onclick="setLang('fr')" data-lang="fr" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇫🇷</button>
+          <button onclick="setLang('es')" data-lang="es" class="lang-option w-8 h-8 rounded-full flex items-center justify-center text-sm transition">🇪🇸</button>
+        </div>
       </div>
       <button onclick="toggleColorMode()" id="colorModeBtn" class="w-10 h-10 rounded-full bg-black border border-border flex items-center justify-center text-white hover:border-accent/50 transition">🌙</button>
       <div class="relative" id="notifBellWrap">
@@ -2434,11 +2447,27 @@ function applyTranslations() {
   document.querySelectorAll('.lang-option').forEach(el => {
     el.classList.toggle('lang-option-active', el.dataset.lang === lang);
   });
+  const flags = { en:'🇬🇧', de:'🇩🇪', ar:'🇸🇦', fr:'🇫🇷', es:'🇪🇸' };
+  const flagEl = document.getElementById('lang-current-flag');
+  if (flagEl) flagEl.innerText = flags[lang] || flags.en;
 }
+
+window.toggleLangPanel = (e) => {
+  if (e) e.stopPropagation();
+  document.getElementById('lang-panel').classList.toggle('hidden');
+};
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('langSwitchWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const panel = document.getElementById('lang-panel');
+    if (panel) panel.classList.add('hidden');
+  }
+});
 
 window.setLang = (lang) => {
   db.lang = lang;
   saveData();
+  document.getElementById('lang-panel').classList.add('hidden');
   applyTranslations();
   if (!document.getElementById('helpOverlay').classList.contains('hidden')) renderHelpContent();
   const msgs = { en:'🌐 Language set to English', de:'🌐 Sprache auf Deutsch eingestellt', ar:'🌐 تم تعيين اللغة إلى العربية', fr:'🌐 Langue définie sur le français', es:'🌐 Idioma establecido en español' };
